@@ -4,14 +4,12 @@ import sqlite3
 from tkinter import Tk, Label, Entry, Button, messagebox
 from werkzeug.utils import secure_filename
 import time
-import yaml
 
 # Kết nối đến cơ sở dữ liệu SQLite
 conn = sqlite3.connect('sqlite.db')  
 cursor = conn.cursor()
 
 def capture_images(student_id, student_name):
-    global labels_saved  # Sử dụng biến cờ toàn cục
     # Sử dụng secure_filename để chuyển tên sinh viên thành tên an toàn
     safe_student_name = secure_filename(student_name)
     
@@ -72,28 +70,6 @@ def capture_images(student_id, student_name):
 
     cap.release()
     cv2.destroyAllWindows()
-
-    # Tạo label cho sinh viên
-    label_name = f"{safe_student_name}_{student_id}"
-    
-    # Đọc tệp labels.yaml nếu tồn tại, nếu không thì tạo danh sách rỗng
-    if os.path.exists('labels.yaml'):
-        with open('labels.yaml', 'r') as file:
-            data = yaml.safe_load(file) or {}  # Nếu file rỗng, trả về dict rỗng
-    else:
-        data = {}
-
-    labels = data.get('labels', [])  # Lấy danh sách labels nếu có
-
-    # Kiểm tra xem label đã tồn tại chưa, nếu chưa thì thêm vào
-    if label_name not in labels:
-        labels.append(label_name)
-
-    # Ghi lại toàn bộ labels vào tệp
-    with open('labels.yaml', 'w') as file:
-        yaml.dump({'labels': labels}, file)
-
-    print("Đã lưu labels vào file labels.yaml")  # In thông báo đã lưu
 
 def check_student():
     student_id = student_id_entry.get()

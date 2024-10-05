@@ -8,6 +8,7 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.applications import VGG16
 from tensorflow.keras import Model
 from tensorflow.keras.callbacks import EarlyStopping
+import yaml
 
 # Đường dẫn đến thư mục dữ liệu
 data_dir = "StudentData"
@@ -35,6 +36,12 @@ validation_generator = datagen.flow_from_directory(
 
 # In ra các nhãn
 print("Classes:", train_generator.class_indices)
+
+# Lưu các nhãn (class) vào tệp labels.yaml
+labels = {v: k for k, v in train_generator.class_indices.items()}  # Đảo thứ tự (value -> key)
+with open('labels.yaml', 'w') as file:
+    yaml.dump(labels, file)
+print("Đã lưu labels vào file labels.yaml")
 
 # Tải mô hình VGG16
 base_model = VGG16(weights='imagenet', include_top=False, input_shape=(224, 224, 3))

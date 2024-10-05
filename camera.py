@@ -11,10 +11,8 @@ class Camera:
         self.predicted_student_id = None
         self.has_predicted = False
         
-        # Đọc nhãn từ file YAML
         with open(labels_file, 'r') as file:
-            labels_data = yaml.safe_load(file)
-            self.labels = labels_data['labels']  # Lưu trữ nhãn trong lớp
+            self.labels = yaml.safe_load(file)
 
     def update_frame(self):
         ret, frame = self.cap.read()
@@ -34,7 +32,7 @@ class Camera:
                 if self.has_predicted:
                     prediction = self.model.predict(roi_color)
                     predicted_label = np.argmax(prediction)
-
+                    print(predicted_label)
                     # Lấy mã sinh viên từ nhãn
                     if predicted_label < len(self.labels):
                         label = self.labels[predicted_label]

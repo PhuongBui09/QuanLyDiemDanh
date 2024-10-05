@@ -45,14 +45,22 @@ class Database:
         """, (student_course_id, date, status))
         self.conn.commit()
 
-    def get_student_info(self, student_id):
+    def get_student_info(self, student_course_id):
         self.cursor.execute("""
-            SELECT S.StudentID, S.Name, C.Name FROM Student S
-            JOIN Class C ON S.ClassID = C.ClassID
-            WHERE StudentID = ?
-        """, (student_id,))
+            SELECT 
+                Student.Name AS StudentName, 
+                Class.Name AS ClassName
+            FROM 
+                Student
+            JOIN 
+                Class ON Student.ClassID = Class.ClassID
+            JOIN 
+                StudentCourse ON Student.StudentID = StudentCourse.StudentID
+            WHERE 
+                Student.StudentID = ?
+        """, (student_course_id,))
         return self.cursor.fetchone()
-    
+
     def get_students_by_course(self, course_name):
         self.cursor.execute("""
             SELECT S.StudentID, S.Name FROM Student S
@@ -68,6 +76,14 @@ class Database:
             WHERE StudentCourseID = ? AND Date = ?
         """, (student_course_id, date))
         return self.cursor.fetchone()[0] > 0
+    
+    def get_student_course_id(self, student_id, course_id):
+        self.cursor.execute("""
+            SELECT StudentCourseID 
+            FROM StudentCourse
+            WHERE StudentID = ? AND CourseID = ?
+        """, (student_id, course_id))
+        return self.cursor.fetchone()
     
     def student_Present(self, course_id, date):
         query = """

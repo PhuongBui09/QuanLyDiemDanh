@@ -10,6 +10,7 @@ class GUI:
     def __init__(self, root, database, camera):
         self.database = database
         self.camera = camera
+        self.selected_course_id = None
 
         self.root = root
         self.root.title("Điểm danh sinh viên")
@@ -205,14 +206,13 @@ class GUI:
     def on_course_change(self, event):
         selected_course_name = self.course_var.get()
         if selected_course_name in self.course_mapping:
-            selected_course_id = self.course_mapping[selected_course_name]
-
+            self.selected_course_id = self.course_mapping[selected_course_name]
             # Lấy danh sách tất cả sinh viên đăng ký cho môn học này
             students = self.database.get_students_by_course(selected_course_name)
             self.update_student_listbox(students)  # Cập nhật danh sách sinh viên đăng ký
             
             # Load danh sách sinh viên có mặt
-            self.load_present_students(selected_course_id)
+            self.load_present_students(self.selected_course_id)
 
     def update_student_listbox(self, students):
         self.student_listbox.delete(0, tk.END)  # Xóa danh sách hiện tại
@@ -227,7 +227,6 @@ class GUI:
     def load_present_students(self, course_id):
         current_date = datetime.datetime.now().strftime("%Y-%m-%d")
         present_students = self.database.student_Present(course_id, current_date)
-        
         # Cập nhật danh sách sinh viên có mặt
         self.update_present_listbox(present_students)
 
@@ -252,27 +251,29 @@ class GUI:
             self.thongbao_label.config(text="Vui lòng chọn môn học trước khi điểm danh.")
             return
 
-        student_course_id = str(self.camera.predicted_student_id)  # Chuyển đổi thành chuỗi
+        student_id = str(self.camera.predicted_student_id)  # Chuyển đổi thành chuỗi
 
         # Lấy danh sách sinh viên đã đăng ký cho môn học này
         students_in_course = self.database.get_students_by_course(selected_course)
         # Kiểm tra xem sinh viên đã dự đoán có nằm trong danh sách sinh viên không
-        if not any(str(student[0]) == student_course_id for student in students_in_course):
+        if not any(str(student[0]) == student_id for student in students_in_course):
             self.thongbao_label.config(text="Bạn không ở trong lớp này.")
             return
         
         # Kiểm tra nếu sinh viên đã điểm danh trong ngày
         current_date = datetime.datetime.now().strftime("%Y-%m-%d")
-        if self.database.has_attended_today(student_course_id, current_date):
+        student_course_id = self.database.get_student_course_id(student_id, self.selected_course_id)
+        if self.database.has_attended_today(student_course_id[0], current_date):
             self.thongbao_label.config(text="Sinh viên đã được điểm danh trong ngày.")
             return
         
-        student_info = self.database.get_student_info(student_course_id)
+        student_info = self.database.get_student_info(student_id)
+
         if student_info:
-            student_id, student_name, student_class = student_info
+            student_name, student_class = student_info
             self.student_info_label.config(text=f"{student_name}, lớp: {student_class}")
-            self.database.save_attendance(student_course_id, current_date, 'Present')
+            self.database.save_attendance(student_course_id[0], current_date, 'Present')
             self.update_student_listbox(students_in_course)
-            self.load_present_students(selected_course)  # Cập nhật lại danh sách có mặt
+            self.load_present_students(self.selected_course_id)
         else:
             self.thongbao_label.config(text="Không tìm thấy thông tin sinh viên.")
