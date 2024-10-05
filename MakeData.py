@@ -40,7 +40,7 @@ def capture_images(student_id, student_name):
         if not ret:
             break
         
-        # Chuyển đổi ảnh sang màu xám
+        # Chuyển đổi ảnh sang màu xám để phát hiện khuôn mặt
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5)
 
@@ -48,15 +48,15 @@ def capture_images(student_id, student_name):
         for (x, y, w, h) in faces:
             cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
 
-            # Cắt ảnh khuôn mặt từ ảnh xám
-            face_region = gray[y:y + h, x:x + w]
+            # Cắt ảnh khuôn mặt từ ảnh màu
+            face_region_color = frame[y:y + h, x:x + w]  # Sử dụng ảnh màu
 
             # Lưu ảnh khuôn mặt nếu đã qua 0.3 giây kể từ lần chụp trước
             current_time = time.time()
             if current_time - last_capture_time >= 0.3:
                 count += 1
                 img_path = os.path.join(folder_name, f'image_{count}.jpg')
-                cv2.imwrite(img_path, face_region)  # Lưu chỉ vùng khuôn mặt đã cắt
+                cv2.imwrite(img_path, face_region_color)  # Lưu vùng khuôn mặt màu
                 last_capture_time = current_time  # Cập nhật thời gian chụp
                  
                 print('Đã lưu ảnh khuôn mặt tại:', img_path)

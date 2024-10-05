@@ -241,11 +241,23 @@ class GUI:
             self.present_listbox.insert(tk.END, f"{student_name} - {student_id} - {attendance_date}")
 
     def on_submit(self):
-        self.camera.reset_prediction()  # Reset lại biến khi xác nhận
-        self.camera.has_predicted = True
-        
+        self.camera.reset_prediction()  # Reset biến trước khi xác nhận
+        self.camera.has_predicted = True  # Đặt cờ để camera dự đoán
+
+        # Đợi camera dự đoán (với thời gian timeout tối đa là 3 giây)
+        timeout = 30  # 30 lần x 100ms = 3 giây
+        while timeout > 0 and self.camera.predicted_student_id is None:
+            self.root.update()  # Cập nhật giao diện để nhận diện khuôn mặt
+            self.root.after(100)  # Đợi 100ms
+            timeout -= 1
+
+        # Kiểm tra xem mã sinh viên đã được dự đoán hay chưa
+        if not self.camera.predicted_student_id:
+            self.thongbao_label.config(text="Không nhận diện được khuôn mặt. Vui lòng thử lại.")
+            return
+
         selected_course = self.course_var.get()
-        
+
         # Kiểm tra xem có môn học nào đã được chọn chưa
         if not selected_course:
             self.thongbao_label.config(text="Vui lòng chọn môn học trước khi điểm danh.")
@@ -255,18 +267,20 @@ class GUI:
 
         # Lấy danh sách sinh viên đã đăng ký cho môn học này
         students_in_course = self.database.get_students_by_course(selected_course)
+
         # Kiểm tra xem sinh viên đã dự đoán có nằm trong danh sách sinh viên không
         if not any(str(student[0]) == student_id for student in students_in_course):
             self.thongbao_label.config(text="Bạn không ở trong lớp này.")
             return
-        
-        # Kiểm tra nếu sinh viên đã điểm danh trong ngày
+
+        # Kiểm tra nếu sinh viên đã điểm danh trong ngày **SAU KHI camera trả về predicted_student_id**
         current_date = datetime.datetime.now().strftime("%Y-%m-%d")
         student_course_id = self.database.get_student_course_id(student_id, self.selected_course_id)
         if self.database.has_attended_today(student_course_id[0], current_date):
             self.thongbao_label.config(text="Sinh viên đã được điểm danh trong ngày.")
             return
-        
+
+        # Nếu sinh viên chưa điểm danh, lưu lại điểm danh
         student_info = self.database.get_student_info(student_id)
 
         if student_info:
@@ -275,5 +289,6 @@ class GUI:
             self.database.save_attendance(student_course_id[0], current_date, 'Present')
             self.update_student_listbox(students_in_course)
             self.load_present_students(self.selected_course_id)
+            self.camera.predicted_student_id = None  # Đặt lại sau khi điểm danh xong
         else:
             self.thongbao_label.config(text="Không tìm thấy thông tin sinh viên.")
